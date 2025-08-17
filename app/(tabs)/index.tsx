@@ -28,7 +28,7 @@ const Index = () => {
         { moviesLoading ? (
           <ActivityIndicator 
             size='large' 
-            color='#fff' 
+            color='#fff'
             className='mt-10 self-center'
           />
         ) : moviesError ? (
