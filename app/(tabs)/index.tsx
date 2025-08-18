@@ -1,76 +1,75 @@
-import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator, FlatList } from 'react-native'
-import React from 'react'
-import { images } from '@/constants/images'
-import { icons } from '@/constants/icons'
-import SearchBar  from '../../components/SearchBar'
-import { useRouter } from 'expo-router'
-import useFetch from '@/services/useFetch'
-import { fetchMovies } from '@/services/api'
-import MovieCard from '@/components/movieCard'
+import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator, FlatList } from 'react-native';
+import React, { useCallback } from 'react';
+import { images } from '@/constants/images';
+import { icons } from '@/constants/icons';
+import SearchBar from '@/components/SearchBar';
+import { useRouter } from 'expo-router';
+import useFetch from '@/services/useFetch';
+import { fetchMovies } from '@/services/api';
+import MovieCard from '@/components/movieCard';
 
 const Index = () => {
   const router = useRouter();
 
-  const { 
-    data: movies, 
-    loading: moviesLoading, 
-    error: moviesError } =  useFetch(() => fetchMovies({
-    query: ''
-  }));
+  // stable fetcher: only changes if dependencies change
+  const fetcher = useCallback(() => fetchMovies({ query: '' }), []);
+
+  const {
+    data: movies = [],
+    loading: moviesLoading,
+    error: moviesError,
+  } = useFetch(fetcher, true); // auto fetch once
 
   return (
-    <View className='flex-1 bg-primary'>
-      <Image source={images.bg} className='absolute w-full z-0' />
+    <View className="flex-1 bg-primary">
+      <Image source={images.bg} className="absolute w-full z-0" />
 
-      <ScrollView className='flex-1 px-5' showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, minHeight: '100%' }}>
-        <Image source={icons.logo} className='w-12 h-10 mt-20 mb-5 mx-auto'/>
+      <ScrollView
+        className="flex-1 px-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 10, minHeight: '100%' }}
+      >
+        <Image source={icons.logo} className="w-12 h-10 mt-20 mb-5 mx-auto" />
 
-        { moviesLoading ? (
-          <ActivityIndicator 
-            size='large' 
-            color='#fff'
-            className='mt-10 self-center'
-          />
+        {moviesLoading ? (
+          <ActivityIndicator size="large" color="#fff" className="mt-10 self-center" />
         ) : moviesError ? (
           <Text>Error: {moviesError?.message}</Text>
-          ) : (
-            <View className='flex-1 mt-5'>
-              <SearchBar
-                onPress={() => router.push('/search')}
-                placeholder='Search for a movie'
+        ) : (
+          <View className="flex-1 mt-5">
+            <SearchBar
+              onPress={() => router.push('/search')}
+              placeholder="Search for a movie"
+            />
+
+            <>
+              <Text className="text-lg text-white font-bold mt-5 mb-3">
+                Latest Movies
+              </Text>
+
+              <FlatList
+                data={movies}
+                renderItem={({ item }) => <MovieCard {...item} />}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={3}
+                columnWrapperStyle={{
+                  justifyContent: 'flex-start',
+                  gap: 20,
+                  marginBottom: 10,
+                  paddingRight: 5,
+                }}
+                className="mt-2 pb-32"
+                scrollEnabled={false}
               />
-
-              <>
-                <Text className='text-lg text-white font-bold mt-5 mb-3'> Latest Movies</Text>
-
-                <FlatList
-                  data={movies}
-                  renderItem={({item}) => (
-                    <MovieCard
-                      {...item}
-                    />
-                  )}
-                  keyExtractor={(item) => item.id.toString()}
-                  numColumns={3}
-                  columnWrapperStyle={{ 
-                    justifyContent: 'flex-start',
-                    gap: 20,
-                    marginBottom: 10,
-                    paddingRight: 5,
-                  }}
-                  className='mt-2 pb-32'
-                  scrollEnabled={false}
-                />
-              </>
-            </View>
+            </>
+          </View>
         )}
-
-        
       </ScrollView>
     </View>
-  )
-}
+  );
+};
 
-export default Index
+export default Index;
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({});
+
