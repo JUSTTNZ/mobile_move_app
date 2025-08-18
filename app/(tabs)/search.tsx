@@ -1,21 +1,24 @@
-import { FlatList, Image, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { useRouter } from 'expo-router'
-import useFetch from '@/services/useFetch'
-import { fetchMovies } from '@/services/api'
-import { images } from '@/constants/images'
 import MovieCard from '@/components/movieCard'
+import SearchBar from '@/components/SearchBar'
+import { icons } from '@/constants/icons'
+import { images } from '@/constants/images'
+import { fetchMovies } from '@/services/api'
+import useFetch from '@/services/useFetch'
+import { useRouter } from 'expo-router'
+import React, { useState } from 'react'
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from 'react-native'
 
 const search = () => {
 
-  const router = useRouter();
+  const [ searchQuery,  setSearchQuery] = useState('');
 
   const { 
     data: movies, 
-    loading: moviesLoading, 
-    error: moviesError } =  useFetch(() => fetchMovies({
-    query: ''
-  }));
+    loading, 
+    error
+  } =  useFetch(() => fetchMovies({
+    query: searchQuery
+  }), false);
 
   return (
     <View className='flex-1 bg-primary'>
@@ -31,7 +34,38 @@ const search = () => {
           gap: 16,
           marginVertical: 16,
         }}
-        
+        contentContainerStyle={{paddingBottom: 100}}
+        ListHeaderComponent={
+          <>  
+            <View className='w-full flex-row justify-center  mt-20 items-center'>
+              <Image source={icons.logo} className='w-12 h-10'/>
+            </View>
+            <View className='my-5'>
+              <SearchBar 
+                placeholder='Search movies ...'
+                value={searchQuery}
+                onChangeText={(text: string) => setSearchQuery(text)}
+              />
+            </View>
+            {
+              loading && (
+                <ActivityIndicator size='large' color='#0000ff' className='my-3'/>
+              )
+            }
+            {
+              error && (
+                  <Text className='text-red-500 px-5 my-3'> Error: {error.message} </Text>
+              )
+            }
+
+            {!loading && !error && searchQuery.trim() && movies?.length > 0 && ( 
+                <Text className='text-xl text-white font-bold'>
+                  Search Results for{' '}
+                  <Text className='text-accent'>{searchQuery}</Text>
+                </Text>
+            )}
+          </>
+        }
         />
     </View>
   )
