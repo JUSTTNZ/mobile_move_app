@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React from 'react';
 import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native';
 import SearchBar from '@/components/SearchBar';
 import MovieCard from '@/components/movieCard';
@@ -6,9 +6,10 @@ import useFetch from '@/services/useFetch';
 import { fetchMovies } from '@/services/api';
 import { images } from '@/constants/images';
 import { icons } from '@/constants/icons';
+import { updateSearchCount } from '@/services/appWrite';
 
-// tiny debounce hook
-function useDebouncedValue<T>(value: T, delay = 350) {
+// debounce helper
+function useDebouncedValue<T>(value: T, delay = 500) {
   const [debounced, setDebounced] = React.useState(value);
   React.useEffect(() => {
     const id = setTimeout(() => setDebounced(value), delay);
@@ -18,17 +19,27 @@ function useDebouncedValue<T>(value: T, delay = 350) {
 }
 
 const SearchScreen = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedQuery = useDebouncedValue(searchQuery, 350);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const debouncedQuery = useDebouncedValue(searchQuery, 500);
 
-  // fetcher uses the debounced query:
-  // '' => default list (discover), text => real search
-  const fetcher = useCallback(() => {
+  // TMDB fetcher uses the *debounced* query: '' => default list, text => search
+  const fetcher = React.useCallback(() => {
     const q = debouncedQuery.trim();
     return fetchMovies({ query: q });
   }, [debouncedQuery]);
 
   const { data: movies = [], loading, error } = useFetch(fetcher, true);
+
+  // 👇 Match the tutorial: whenever query changes (after debounce), log/update in Appwrite
+  React.useEffect(() => {
+    const q = debouncedQuery.trim();
+    if (!q) return; // don't log empty searches
+
+    // pass the first movie as context if available (tutorial shows movies[0])
+    updateSearchCount(q, movies[0]).catch((e) =>
+      console.log('updateSearchCount error:', e)
+    );
+  }, [debouncedQuery, movies]); // movies dep allows sending movies[0] when results arrive
 
   return (
     <View className="flex-1 bg-primary">
@@ -66,7 +77,7 @@ const SearchScreen = () => {
           </>
         }
         ListEmptyComponent={
-            !loading && !error ? <Text className="text-white mt-6">No movies found.</Text> : null
+          !loading && !error ? <Text className="text-white mt-6">No movies found.</Text> : null
         }
       />
     </View>
